@@ -9,33 +9,45 @@ const btn = document.getElementById('submitBtn');
 const checkbox = document.getElementById('valentineCheck');
 const message = document.getElementById('message');
 
-// --- THE RUNAWAY LOGIC (ONLY happens on hover) ---
-btn.addEventListener('mouseover', () => {
+// --- THE RUNAWAY LOGIC ---
+const moveButton = () => {
     if (!checkbox.checked) {
-        // Set to absolute so it can move anywhere
-        btn.style.position = 'absolute'; 
+        // 'fixed' makes it move relative to the browser window, not the div
+        btn.style.position = 'fixed'; 
         
         // Calculate random coordinates
-        const x = Math.random() * (window.innerWidth - btn.clientWidth - 50);
-        const y = Math.random() * (window.innerHeight - btn.clientHeight - 50);
+        // We subtract a bit more (100px) to keep it away from the extreme edges
+        const x = Math.random() * (window.innerWidth - btn.clientWidth - 100) + 50;
+        const y = Math.random() * (window.innerHeight - btn.clientHeight - 100) + 50;
         
         btn.style.left = `${x}px`;
         btn.style.top = `${y}px`;
     }
-});
+};
 
-// --- THE RESET LOGIC (Snaps button back when she checks the box) ---
-checkbox.addEventListener('change', () => {
-    if (checkbox.checked) {
-        btn.style.position = 'static'; 
-        btn.style.margin = '20px auto';
-        message.innerText = ""; // Clear any "You have to check the box" messages
-    } else {
-        btn.style.position = 'absolute';
+// desktop hover
+btn.addEventListener('mouseover', moveButton);
+
+// mobile touch (crucial for phones!)
+btn.addEventListener('touchstart', (e) => {
+    if (!checkbox.checked) {
+        e.preventDefault(); // Prevents the actual click
+        moveButton();
     }
 });
 
-// --- THE EMAIL LOGIC (ONLY happens on click) ---
+// --- THE RESET LOGIC ---
+checkbox.addEventListener('change', () => {
+    if (checkbox.checked) {
+        // Put it back in the middle when she says yes
+        btn.style.position = 'static'; 
+        btn.style.margin = '20px auto';
+        btn.style.display = 'block'; // Ensure it's visible
+        message.innerText = ""; 
+    }
+});
+
+// --- THE EMAIL LOGIC ---
 btn.addEventListener('click', () => {
     if (checkbox.checked) {
         message.innerText = "Sending the menu... ❤️";
@@ -49,9 +61,7 @@ btn.addEventListener('click', () => {
         emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams)
             .then(() => {
                 message.innerText = "Sent! Check your email. See you then! 🥰";
-                celebration(); // Trigger the confetti
-                
-                // Final touch: hide everything so she can just see the success message
+                celebration();
                 btn.style.display = 'none';
                 checkbox.parentElement.style.display = 'none';
             }, (err) => {
@@ -59,6 +69,8 @@ btn.addEventListener('click', () => {
                 console.log("EmailJS Error:", err);
             });
     } else {
+        // If she somehow clicks it without the box checked
+        moveButton();
         message.innerText = "You have to check the box first! 😉";
     }
 });
@@ -75,10 +87,7 @@ function celebration() {
 
     const interval = setInterval(function() {
         const timeLeft = animationEnd - Date.now();
-
-        if (timeLeft <= 0) {
-            return clearInterval(interval);
-        }
+        if (timeLeft <= 0) return clearInterval(interval);
 
         const particleCount = 50 * (timeLeft / duration);
         
